@@ -7,6 +7,7 @@ import "tools/bam_to_cram.wdl" as btc
 import "tools/concordance.wdl" as c
 import "tools/index_cram.wdl" as ic
 import "tools/manta_somatic.wdl" as ms
+import "tools/cnvkit_batch.wdl" as cb
 
 import "types.wdl"
 
@@ -206,6 +207,14 @@ workflow somaticWgs {
     output_contigs=manta_output_contigs
   }
 
+
+  call cb.cnvkitBatch as cnvkit {
+    input:
+    tumor_bam=tumorAlignmentAndQc.bam,
+    normal_bam=nnormalAlignmentAndQc.bam,
+    reference_fasta=reference
+  }
+
   call btc.bamToCram as tumorBamToCram {
     input:
     bam=tumorAlignmentAndQc.bam,
@@ -305,5 +314,19 @@ workflow somaticWgs {
 ##sample concordance check
     File somalier_concordance_metrics = concordance.somalier_pairs
     File somalier_concordance_statistics = concordance.somalier_samples
+##cnvkit outputs
+    File? intervals_antitarget = cnvkit.intervals_antitarget
+    File? intervals_target = cnvkit.intervals_target
+    File? normal_antitarget_coverage = cnvkit.normal_antitarget_coverage
+    File? normal_target_coverage = cnvkit.normal_target_coverage
+    File? reference_coverage = cnvkit.reference_coverage
+    File tumor_antitarget_coverage = cnvkit.tumor_antitarget_coverage
+    File tumor_target_coverage = cnvkit.tumor_target_coverage
+    File tumor_bin_level_ratios = cnvkit.tumor_bin_level_ratios
+    File tumor_segmented_ratios = cnvkit.tumor_segmented_ratios
+
+    File? cn_diagram = cnvkit.cn_diagram
+    File? cn_scatter_plot = cnvkit.cn_scatter_plot
   }
 }
+ 
